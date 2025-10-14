@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (!existingProfile && firebaseUser.email) {
                   // Create profile for existing user without one
                   await import("./firebaseService").then(async (module) => {
-                    await module.createUserProfile(firebaseUser.uid, firebaseUser.email!, false);
+                    await module.createUserProfile(firebaseUser.uid, firebaseUser.email!);
                   });
                   // Profile will be picked up by the subscription automatically
                 } else {
