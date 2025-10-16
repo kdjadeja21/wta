@@ -50,7 +50,9 @@ export async function createUserProfile(
   userId: string,
   email: string,
   username?: string,
-  includeDemoData: boolean = false
+  includeDemoData: boolean = false,
+  firstName?: string,
+  lastName?: string
 ): Promise<void> {
   const profileRef = doc(db, "users", userId, "profile", "data");
   
@@ -60,6 +62,8 @@ export async function createUserProfile(
   const profileData = {
     email,
     username: defaultUsername,
+    firstName: firstName || undefined,
+    lastName: lastName || undefined,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };

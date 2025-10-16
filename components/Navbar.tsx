@@ -1,6 +1,6 @@
 "use client";
 
-import { Scale, LogOut, User, Moon, Sun } from "lucide-react";
+import { Scale, LogOut, CircleUserRound, User, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -82,7 +82,7 @@ export function Navbar({ userEmail }: NavbarProps) {
           <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon">
-              <User className="h-5 w-5" />
+              <CircleUserRound className="h-5 w-5" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-56" align="end">

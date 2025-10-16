@@ -4,6 +4,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  sendEmailVerification,
   User as FirebaseUser,
 } from "firebase/auth";
 import { auth } from "@/app/firebase";
@@ -23,7 +24,9 @@ export async function signup(
   email: string,
   password: string,
   username?: string,
-  includeDemoData: boolean = true
+  includeDemoData: boolean = true,
+  firstName?: string,
+  lastName?: string
 ): Promise<AuthResult> {
   if (!email || !password || !username) {
     return { success: false, message: "All fields are required" };
@@ -47,17 +50,48 @@ export async function signup(
     return { success: false, message: "Username can only contain letters, numbers, underscores, and hyphens" };
   }
 
+  // Validate first name and last name if provided
+  if (firstName && firstName.trim().length < 2) {
+    return { success: false, message: "First name must be at least 2 characters" };
+  }
+
+  if (lastName && lastName.trim().length < 2) {
+    return { success: false, message: "Last name must be at least 2 characters" };
+  }
+
+  const nameRegex = /^[a-zA-Z\s'-]+$/;
+  if (firstName && !nameRegex.test(firstName.trim())) {
+    return { success: false, message: "First name can only contain letters, spaces, hyphens, and apostrophes" };
+  }
+
+  if (lastName && !nameRegex.test(lastName.trim())) {
+    return { success: false, message: "Last name can only contain letters, spaces, hyphens, and apostrophes" };
+  }
+
   try {
     // Create Firebase user
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
+    // Send email verification
+    await sendEmailVerification(user);
+
     // Create user profile in Firestore
-    await createUserProfile(user.uid, email, username, includeDemoData);
+    await createUserProfile(
+      user.uid, 
+      email, 
+      username, 
+      includeDemoData,
+      firstName?.trim(),
+      lastName?.trim()
+    );
+
+    // Sign out user immediately so they can't access the app until verified
+    await signOut(auth);
 
     return {
       success: true,
-      message: "Account created successfully",
+      message: "Account created! Please check your email to verify your account before logging in.",
     };
   } catch (error: any) {
     console.error("Signup error:", error);
@@ -85,6 +119,17 @@ export async function login(email: string, password: string): Promise<AuthResult
 
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Check if email is verified
+    if (!user.emailVerified) {
+      // Sign out the user immediately
+      await signOut(auth);
+      return { 
+        success: false, 
+        message: "Please verify your email before logging in. Check your inbox for the verification link." 
+      };
+    }
     
     return {
       success: true,

@@ -11,6 +11,8 @@ export interface WeightEntry {
 export interface UserProfile {
   email: string;
   username: string;
+  firstName?: string;
+  lastName?: string;
   height?: number; // in cm
   goalWeight?: number; // in kg
   createdAt?: Timestamp | Date; // Firestore timestamp

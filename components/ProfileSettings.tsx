@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { User, Lock, Edit2 } from "lucide-react";
+import { User, Lock, Edit2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import { updateUserProfile } from "@/lib/firebaseService";
 import { updatePassword, sendPasswordResetEmail } from "@/lib/passwordUtils";
@@ -21,6 +21,16 @@ export function ProfileSettings() {
   const [username, setUsername] = useState("");
   const [savingUsername, setSavingUsername] = useState(false);
 
+  // First name states
+  const [showFirstNameForm, setShowFirstNameForm] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [savingFirstName, setSavingFirstName] = useState(false);
+
+  // Last name states
+  const [showLastNameForm, setShowLastNameForm] = useState(false);
+  const [lastName, setLastName] = useState("");
+  const [savingLastName, setSavingLastName] = useState(false);
+
   // Password states
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -29,10 +39,19 @@ export function ProfileSettings() {
   const [verifyingPassword, setVerifyingPassword] = useState(false);
   const [passwordVerified, setPasswordVerified] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   useEffect(() => {
     if (userProfile?.username) {
       setUsername(userProfile.username);
+    }
+    if (userProfile?.firstName) {
+      setFirstName(userProfile.firstName);
+    }
+    if (userProfile?.lastName) {
+      setLastName(userProfile.lastName);
     }
   }, [userProfile]);
 
@@ -69,6 +88,76 @@ export function ProfileSettings() {
   const handleCancelUsername = () => {
     setUsername(userProfile?.username || "");
     setShowUsernameForm(false);
+  };
+
+  const handleSaveFirstName = async () => {
+    if (!user) {
+      toast.error("You must be logged in");
+      return;
+    }
+
+    if (firstName && firstName.trim().length < 2) {
+      toast.error("First name must be at least 2 characters");
+      return;
+    }
+
+    // Validate first name format (letters, spaces, hyphens, apostrophes)
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    if (firstName && !nameRegex.test(firstName.trim())) {
+      toast.error("First name can only contain letters, spaces, hyphens, and apostrophes");
+      return;
+    }
+
+    setSavingFirstName(true);
+    const success = await updateUserProfile(user.uid, { firstName: firstName.trim() || undefined });
+    setSavingFirstName(false);
+
+    if (success) {
+      toast.success("First name updated successfully");
+      setShowFirstNameForm(false);
+    } else {
+      toast.error("Failed to update first name");
+    }
+  };
+
+  const handleCancelFirstName = () => {
+    setFirstName(userProfile?.firstName || "");
+    setShowFirstNameForm(false);
+  };
+
+  const handleSaveLastName = async () => {
+    if (!user) {
+      toast.error("You must be logged in");
+      return;
+    }
+
+    if (lastName && lastName.trim().length < 2) {
+      toast.error("Last name must be at least 2 characters");
+      return;
+    }
+
+    // Validate last name format (letters, spaces, hyphens, apostrophes)
+    const nameRegex = /^[a-zA-Z\s'-]+$/;
+    if (lastName && !nameRegex.test(lastName.trim())) {
+      toast.error("Last name can only contain letters, spaces, hyphens, and apostrophes");
+      return;
+    }
+
+    setSavingLastName(true);
+    const success = await updateUserProfile(user.uid, { lastName: lastName.trim() || undefined });
+    setSavingLastName(false);
+
+    if (success) {
+      toast.success("Last name updated successfully");
+      setShowLastNameForm(false);
+    } else {
+      toast.error("Failed to update last name");
+    }
+  };
+
+  const handleCancelLastName = () => {
+    setLastName(userProfile?.lastName || "");
+    setShowLastNameForm(false);
   };
 
   const handleVerifyPassword = async (e: React.FormEvent) => {
@@ -152,6 +241,9 @@ export function ProfileSettings() {
     setConfirmNewPassword("");
     setPasswordVerified(false);
     setShowPasswordForm(false);
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmNewPassword(false);
   };
 
   const handleForgotPassword = async () => {
@@ -173,6 +265,152 @@ export function ProfileSettings() {
 
   return (
     <div className="space-y-4 md:space-y-6">
+      {/* First Name Section */}
+      {!showFirstNameForm ? (
+        // Display mode - show first name and update button
+        <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900">
+              <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">First Name</p>
+              <p className="text-base font-medium">{userProfile?.firstName || "Not set"}</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFirstNameForm(true)}
+            className="gap-2"
+          >
+            <Edit2 className="h-4 w-4" />
+            Update
+          </Button>
+        </div>
+      ) : (
+        // Edit mode - show form
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              First Name
+            </CardTitle>
+            <CardDescription>
+              Update your first name
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="John"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                minLength={2}
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                At least 2 characters (letters, spaces, hyphens, apostrophes)
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleCancelFirstName}
+                className="flex-1"
+                disabled={savingFirstName}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveFirstName}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                disabled={savingFirstName}
+              >
+                {savingFirstName ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Last Name Section */}
+      {!showLastNameForm ? (
+        // Display mode - show last name and update button
+        <div className="flex items-center justify-between p-4 rounded-lg border bg-card">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900">
+              <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Last Name</p>
+              <p className="text-base font-medium">{userProfile?.lastName || "Not set"}</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowLastNameForm(true)}
+            className="gap-2"
+          >
+            <Edit2 className="h-4 w-4" />
+            Update
+          </Button>
+        </div>
+      ) : (
+        // Edit mode - show form
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Last Name
+            </CardTitle>
+            <CardDescription>
+              Update your last name
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Doe"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                minLength={2}
+                autoFocus
+              />
+              <p className="text-xs text-muted-foreground">
+                At least 2 characters (letters, spaces, hyphens, apostrophes)
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleCancelLastName}
+                className="flex-1"
+                disabled={savingLastName}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveLastName}
+                className="flex-1 bg-purple-600 hover:bg-purple-700"
+                disabled={savingLastName}
+              >
+                {savingLastName ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Username Section */}
       {!showUsernameForm ? (
         // Display mode - show username and update button
@@ -296,16 +534,30 @@ export function ProfileSettings() {
                       Forgot password?
                     </button>
                   </div>
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                    autoFocus
-                  />
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      type={showCurrentPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                      autoComplete="current-password"
+                      autoFocus
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showCurrentPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     Enter your current password to continue
                   </p>
@@ -340,16 +592,30 @@ export function ProfileSettings() {
 
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">New Password</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     At least 6 characters
                   </p>
@@ -357,16 +623,30 @@ export function ProfileSettings() {
 
                 <div className="space-y-2">
                   <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-                  <Input
-                    id="confirmNewPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmNewPassword"
+                      type={showConfirmNewPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex gap-3">
